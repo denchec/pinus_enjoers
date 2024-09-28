@@ -15,7 +15,6 @@ def start_page_extracrion():
 
     extracted_data = requests.get(url, headers=headers).json()
     return extracted_data['data']['products']
-print(len((start_page_extracrion())))
 
 def find_values_by_key(json_object):
 
