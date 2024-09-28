@@ -1,26 +1,44 @@
-import requests
 import psycopg2
 
-articl = input()
-def data_extracrion(): #на выходе отдает данные по артикулу, назвонию и цене
-    url = 'https://card.wb.ru/cards/v2/detail?appType=1&curr=rub&dest=-12695438&spp=30&ab_testing=false&nm=' + str(articl)
+import requests
+import datetime
+
+# фиксируем и выводим время старта работы кода
+start = datetime.datetime.now()
+
+'''Возвращает JSON со списком товаров с первой страницы'''
+def start_page_extracrion():
+    url = 'https://recom.wb.ru/personal/ru/male/v5/search?ab_already_purchase_v2_ts=test&ab_dino_matcher=ab_baseline_boost_09_05&appType=1&curr=rub&dest=-535680&page=1&query=84892243&resultset=catalog&spp=30&suppressSpellcheck=false&uclusters=0'
     headers = {
         'Authorization': f'Bearer {'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MjcyMDc0MTMsInZlcnNpb24iOjIsInVzZXIiOiI4NDg5MjI0MyIsInNoYXJkX2tleSI6IjIiLCJjbGllbnRfaWQiOiJ3YiIsInNlc3Npb25faWQiOiI3ODQzZTA1NWI4MDY0YmVjOGQ0ZTk2ZTMyMWI2ODY2YyIsInVzZXJfcmVnaXN0cmF0aW9uX2R0IjoxNjc0MDQ3ODQyLCJ2YWxpZGF0aW9uX2tleSI6ImUzNmI2ZjY1OWJjYzYzMTk0Nzg3NjYwOTA4MDgyZTRkNTAyNmE1MjE5MTQ0ZDMxMTEyMjVlMjk0MjkwNjI5ODUiLCJwaG9uZSI6ImRXMVJuN2xSVDdJeUFVZ1NaYjB5RkE9PSJ9.INr7u6cqVleDLUt43ThSLIK7nhTHsCv7s5inX5_Mr4v46M5pc0_JSKCenCUFHPaMcj8J4cxs2q0CYF1wOgORPQHaU3gnfYxvbhWiVOJBCk60slonOL_j9ioXjDdglntq5f2NULRzP8w0G2vzmqQOxC8jWh3MuTLJfu26L3nbId6jJb2W6hRB67pv9esTyx6igl4-Oth1ku4gPn6Y1zZOeGw_S1WBhLqt4RgLHbzvTGC-PslxSCVmeooSUte3RlONv8-60vhKkgeUrUDfspPO23NtqYRexhAwX1gmxtpCSmYFqg0QKVs_Rc8Z80ldyCJbMkpC7F0jmbLfmnMoDGwMZQ'}',
     }
 
-    pr_extr = requests.get(url, headers=headers).json()
+    extracted_data = requests.get(url, headers=headers).json()
+    return extracted_data['data']['products']
+print(len((start_page_extracrion())))
 
-    r = requests.get('https://basket-05.wbbasket.ru/vol870/part87060/' + str(articl) + '/info/ru/card.json', auth=('user', 'pass')).json()
+def find_values_by_key(json_object):
 
-    nm = r['nm_id']
-    nm_name = r['imt_name']
-    price = pr_extr['data']['products'][0]['sizes'][0]['price']['product']/100
+    for obj in json_object:
+        if type(obj) == dict:
+            obj = obj.items()
+            values = []
+            for k, v in obj:
+                if k == 'id':
+                    values.append(v)
+                elif k == 'name':
+                    values.append(v)
+                elif k == 'sizes':
+                    obj = dict(obj)
+                    values.append(obj['sizes'][0]['price']['basic'] / 100)
+        return values
 
-    return nm, nm_name, price
-def sql_insert(): #на выходе делает инсерт в базу
-    insrt = "insert into penises (nm, nmname, price) values (" + "'" + str(data_extracrion()[0]) + "'" + "," + " " + "'" + str(data_extracrion()[1]) + "'" + "," + " " + "'" + str(data_extracrion()[2]) + "'" + ')'
 
-    print(insrt)
+
+
+def sql_insert(x): #на выходе делает инсерт в базу
+    insrt = "insert into penises (nm, nmname, price) values (" + "'" + str(find_values_by_key(start_page_extracrion())[0]) + "'" + "," + " " + "'" + str(find_values_by_key(start_page_extracrion())[1]) + "'" + "," + " " + "'" + str(find_values_by_key(start_page_extracrion())[2]) + "'" + ')'
+
     try:
         conn = psycopg2.connect(dbname='penis_store', user='postgres',
                                 password='Mikheev99', host='localhost')
@@ -34,4 +52,10 @@ def sql_insert(): #на выходе делает инсерт в базу
     cursor.close()
     conn.close()
 
-sql_insert()
+pizda = start_page_extracrion()
+
+for i in range(len(start_page_extracrion())):
+    sql_insert(find_values_by_key(pizda))
+
+finish = datetime.datetime.now()
+print('Время работы: ' + str(finish - start))
